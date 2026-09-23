@@ -11,7 +11,10 @@
     "db:generate": "prisma generate",
     "admin:create": "tsx scripts/create-admin.ts",
     "test": "tsx --test tests/*.test.ts",
-    "test:integration": "tsx scripts/integration.ts"
+    "test:integration": "tsx scripts/integration.ts",
+    "build:cloud": "node scripts/cloud-schema.mjs && prisma generate --schema prisma/postgresql/schema.prisma && next build",
+    "start:cloud": "node scripts/start-cloud.mjs",
+    "db:migrate:cloud": "prisma migrate deploy --schema prisma/postgresql/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",

@@ -183,3 +183,10 @@ Referências técnicas: [autenticação e autorização no Next.js](https://next
 O nick público corresponde ao nome cadastrado do proprietário. Quando o master cria um formulário para outra conta, aparece o nick daquela conta. O convite discreto abaixo do formulário e da confirmação abre diretamente o cadastro, ainda sujeito à aprovação manual.
 
 Em outra instalação, pare o servidor e execute `npm.cmd run db:migrate` e `npm.cmd run db:generate` antes de iniciar `npm.cmd run dev`. Nesta instalação a migração já foi aplicada.
+
+## Publicação com link público
+
+O projeto possui configuração gratuita para Render (servidor) + Neon (PostgreSQL).
+A versão local continua usando SQLite. Consulte [o guia de publicação](docs/PUBLICACAO.md).
+A presença de `render.yaml` no GitHub não significa que o site já está publicado:
+é necessário autenticar os serviços, configurar o banco e validar a URL pública.
