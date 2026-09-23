@@ -8,7 +8,6 @@ import {
   FileText,
   MessageSquare,
   Trash2,
-  Ghost,
 } from "lucide-react";
 import { api, date, message } from "@/lib/client";
 import { Notice, Pager } from "./ui";
@@ -101,7 +100,13 @@ export function Dashboard() {
       ) : forms.length === 0 ? (
         <div className="empty-state">
           <span className="empty-icon">
-            <Ghost size={40} strokeWidth={1.2} />
+            <img
+              src="/brand/ghost.png"
+              alt=""
+              width={48}
+              height={56}
+              className="empty-state-logo"
+            />
           </span>
           <h2>Um espaço cheio de possibilidades.</h2>
           <p className="muted">

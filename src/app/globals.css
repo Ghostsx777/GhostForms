@@ -683,6 +683,10 @@ label:focus-within {
 .empty-state.compact {
   padding: 55px 20px;
 }
+.empty-state-logo {
+  object-fit: contain;
+  mix-blend-mode: screen;
+}
 .empty-state.compact > svg {
   margin: 0 auto 20px;
   color: var(--purple);
