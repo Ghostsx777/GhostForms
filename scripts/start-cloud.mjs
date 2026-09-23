@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { migrationUrl } from "./migration-url.mjs";
 
 const origin = process.env.APP_URL || process.env.RENDER_EXTERNAL_URL;
 if (!origin || new URL(origin).protocol !== "https:") {
@@ -26,12 +27,17 @@ function run(file, args, env = process.env) {
       process.once(signal, () => child.kill(signal));
   });
 }
-await run("node_modules/prisma/build/index.js", [
-  "migrate",
-  "deploy",
-  "--schema",
-  "prisma/postgresql/schema.prisma",
-]);
+await run(
+  "node_modules/prisma/build/index.js",
+  ["migrate", "deploy", "--schema", "prisma/postgresql/schema.prisma"],
+  {
+    ...process.env,
+    DATABASE_URL: migrationUrl(
+      process.env.DATABASE_URL,
+      process.env.DIRECT_URL,
+    ),
+  },
+);
 if (process.env.GHOSTFORMS_IMPORT_DATA)
   await run("scripts/import-cloud.mjs", []);
 delete process.env.GHOSTFORMS_IMPORT_DATA;
