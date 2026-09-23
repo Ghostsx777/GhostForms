@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { hashPassword } from "../src/lib/password";
 const db = new PrismaClient();
 const origin = process.env.TEST_URL || "http://127.0.0.1:3000";
+const trustedOrigin = process.env.TEST_REQUEST_ORIGIN || origin;
 if (!["localhost", "127.0.0.1"].includes(new URL(origin).hostname))
   throw new Error("Execute os testes somente em uma instância local.");
 const suffix = randomUUID();
@@ -19,7 +20,7 @@ async function call(
   body?: unknown,
   session?: Session,
   expected = 200,
-  requestOrigin = origin,
+  requestOrigin = trustedOrigin,
 ) {
   const response = await fetch(`${origin}/api/${path}`, {
     method,
@@ -268,7 +269,7 @@ async function run() {
   const upload = await fetch(`${origin}/api/forms/${created.id}/cover`, {
     method: "POST",
     headers: {
-      Origin: origin,
+      Origin: trustedOrigin,
       Cookie: creator.cookie,
       "Content-Type": "image/png",
     },
@@ -298,7 +299,7 @@ async function run() {
     const result = await fetch(`${origin}/api/forms/${created.id}/cover`, {
       method: "POST",
       headers: {
-        Origin: origin,
+        Origin: trustedOrigin,
         Cookie: creator.cookie,
         "Content-Type": "image/png",
       },
@@ -317,7 +318,7 @@ async function run() {
   }
   const invalidUpload = await fetch(`${origin}/api/forms/${created.id}/cover`, {
     method: "POST",
-    headers: { Origin: origin, Cookie: creator.cookie },
+    headers: { Origin: trustedOrigin, Cookie: creator.cookie },
     body: '<svg onload="alert(1)"></svg>',
   });
   assert.equal(invalidUpload.status, 400);
