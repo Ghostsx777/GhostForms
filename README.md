@@ -1,5 +1,13 @@
 # GhostForms
 
+**Site público:** https://ghostforms-ghostsx777.onrender.com  
+**Admin master:** https://ghostforms-ghostsx777.onrender.com/master-admin
+
+Use seu e-mail e senha habituais. Novas contas continuam dependendo da aprovação
+do master. Para compartilhar um formulário, publique-o no editor e copie o link.
+No plano gratuito, a primeira visita após inatividade pode demorar cerca de um minuto.
+Use a versão online para manter os dados atualizados; o banco local não é sincronizado.
+
 Base full-stack executável para criar formulários com identidade escura, contas aprovadas manualmente e moderação de respostas. Next.js App Router + React + TypeScript + Tailwind CSS 4 + Prisma + SQLite. O backend é real: os dados não ficam em localStorage e os controles de acesso são verificados no servidor.
 
 Atualização: nova identidade baseada na referência enviada, prévia corrigida, imagens sem recorte obrigatório e exclusão de contas pelo master. Veja [alterações e verificações](docs/UPDATE-2026-09-23.md). Para excluir: **Administração → Contas e formulários → Excluir**, digite o e-mail e confirme. Essa ação apaga permanentemente a conta e seus formulários/respostas; contas master são protegidas.

@@ -2,9 +2,15 @@
 
 ## Estado
 
-Código preparado. A publicação só estará concluída depois de criar os serviços,
-configurar as credenciais e validar o endereço público. O GitHub armazena o código;
-GitHub Pages não executa o servidor deste projeto.
+Publicado em https://ghostforms-ghostsx777.onrender.com.
+Administração: https://ghostforms-ghostsx777.onrender.com/master-admin.
+Use o mesmo e-mail e senha da conta master local.
+
+Foram migradas 3 contas, 1 formulário e seu histórico. O formulário existente
+continua como rascunho: publique-o no editor antes de compartilhar o link.
+As 94 verificações HTTP passaram no PostgreSQL online, incluindo permissões,
+cadastro pendente, aprovação, formulários, imagens, respostas e moderação.
+O GitHub armazena o código; o Render executa o site e o Neon mantém o banco.
 
 ## Configuração
 
@@ -41,6 +47,25 @@ O script lê uma fotografia consistente do SQLite, preserva IDs, links, hashes d
 senha, formulários, imagens e respostas, e recusa um destino não vazio.
 Sessões e contadores locais não são migrados. A operação é transacional.
 Não há sincronização automática: depois da migração, use a versão online.
+
+### Importação pelo painel do Render
+
+Quando a conexão fica apenas no Render, execute localmente
+`node scripts/export-cloud.mjs`. O arquivo privado
+`test-results/.env.cloud-import` contém a fotografia das tabelas necessárias,
+incluindo hashes de senha, e é ignorado pelo Git. Ele não contém sessões.
+No Render, em **Environment → Edit → Import from .env → Choose a file**, importe
+esse arquivo. Não o compartilhe nem o adicione ao repositório.
+
+No próximo deploy, a inicialização importa os dados em uma transação, confere
+as contagens e registra um comprovante que impede repetir a mesma importação.
+Um destino com outros dados é recusado. O código não sobrescreve contas existentes.
+`GHOSTFORMS_VERIFY_DEPLOY=1` também executa a suíte HTTP através do endereço interno
+do serviço, usando contas temporárias removidas ao fim dos testes.
+
+Após confirmar o sucesso nos logs, remova `GHOSTFORMS_IMPORT_DATA` e defina
+`GHOSTFORMS_VERIFY_DEPLOY=0` no Render. Remova o arquivo temporário local.
+Essas opções são usadas apenas durante a migração inicial.
 
 ## Validação antes de anunciar a URL
 
