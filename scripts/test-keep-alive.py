@@ -29,7 +29,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         requests.append((self.path, self.command, dict(self.headers)))
         if self.path == '/slow':
             time.sleep(20)
-        code = {'/ok': 200, '/error': 503, '/redirect': 302, '/slow': 200}[self.path]
+        code = {'/ok': 200, '/error': 503, '/redirect': 302, '/slow': 200, '/recover': 200}[self.path]
+        if self.path == '/recover' and sum(r[0] == '/recover' for r in requests) <= 2:
+            code = 503
         try:
             self.send_response(code)
             if code == 302:
@@ -55,7 +57,7 @@ class KeepAliveTests(unittest.TestCase):
         started = time.monotonic()
         result = subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', SCRIPT],
             env={**os.environ, 'HEALTH_URL': url, 'NO_PROXY': '127.0.0.1'},
-            capture_output=True, text=True, timeout=22)
+            capture_output=True, text=True, timeout=90)
         elapsed = time.monotonic() - started
         # Escape annotations from intentionally failing scenarios in the parent CI log.
         print(f'\n{self.id().split(".")[-1]}: exit={result.returncode}, duration={elapsed:.2f}s', flush=True)
@@ -97,8 +99,16 @@ class KeepAliveTests(unittest.TestCase):
         result, elapsed = self.run_ping(self.base + '/slow')
         self.assertEqual(result.returncode, 28)
         self.assertIn('HTTP status: 000', result.stdout)
-        self.assertGreaterEqual(elapsed, 14)
-        self.assertLess(elapsed, 20)
+        self.assertEqual(result.stdout.count('HTTP status: 000'), 4)
+        self.assertGreaterEqual(elapsed, 74)
+        self.assertLess(elapsed, 85)
+
+    def test_recovers_after_transient_failure(self):
+        result, _ = self.run_ping(self.base + '/recover')
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.count('HTTP status: 503'), 2)
+        self.assertIn('HTTP status: 200', result.stdout)
+        self.assertIn('Attempt 3/4', result.stdout)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

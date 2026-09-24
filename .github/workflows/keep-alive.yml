@@ -2,7 +2,7 @@ name: Keep Render Alive
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '3-59/10 * * * *'
   workflow_dispatch:
 
 permissions: {}
@@ -15,7 +15,7 @@ jobs:
   ping:
     name: Check backend health
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 3
     env:
       HEALTH_URL: https://ghostforms-ghostsx777.onrender.com/api/health
     steps:
@@ -24,6 +24,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          for attempt in 1 2 3 4; do
+          echo "Attempt $attempt/4 — $(date -u +%FT%TZ)"
           curl_exit=0
           status_code=$(curl \
             --silent \
@@ -39,12 +41,19 @@ jobs:
 
           echo "HTTP status: ${status_code:-000}"
 
-          if [[ "$curl_exit" -ne 0 ]]; then
-            echo "::error::Request failed: curl exit code $curl_exit (HTTP 000 means no HTTP response)."
-            exit "$curl_exit"
+          if [[ "$curl_exit" -eq 0 && "$status_code" == '200' ]]; then
+            echo "Backend healthy."
+            exit 0
           fi
-
-          if [[ "$status_code" != '200' ]]; then
-            echo "::error::Expected HTTP 200, received $status_code."
-            exit 1
+          retryable=false
+          if [[ "$curl_exit" -ne 0 ]]; then retryable=true; fi
+          case "$status_code" in 408|429|500|502|503|504) retryable=true ;; esac
+          if [[ "$attempt" -lt 4 && "$retryable" == true ]]; then
+            echo "Temporary failure; retrying in 5 seconds."
+            sleep 5
+            continue
           fi
+          echo "::error::Health check failed: HTTP ${status_code:-000}, curl exit $curl_exit, attempt $attempt/4."
+          if [[ "$curl_exit" -ne 0 ]]; then exit "$curl_exit"; fi
+          exit 1
+          done

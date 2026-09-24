@@ -9,7 +9,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Test actual workflow script against controlled HTTP responses

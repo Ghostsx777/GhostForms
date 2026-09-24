@@ -1,0 +1,52 @@
+name: Test Application PostgreSQL
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ghostforms_test
+          POSTGRES_PASSWORD: isolated_test_only
+          POSTGRES_DB: ghostforms_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ghostforms_test:isolated_test_only@127.0.0.1:5432/ghostforms_test
+      APP_URL: https://ghostforms.test
+      TEST_URL: http://127.0.0.1:3100
+      TEST_REQUEST_ORIGIN: https://ghostforms.test
+      INTEGRATION_ISOLATED_DB: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.20.0'
+          cache: npm
+      - run: npm ci --include=dev
+      - run: npm run build:cloud
+      - run: npm run db:migrate:cloud
+      - run: npm test
+      - name: Test PostgreSQL and account approval
+        shell: bash
+        run: |
+          set -euo pipefail
+          node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3100 > /tmp/ghostforms-test.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --silent --fail http://127.0.0.1:3100/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --silent --fail http://127.0.0.1:3100/api/health
+          npm run test:integration
