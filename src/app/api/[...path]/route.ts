@@ -115,14 +115,61 @@ async function handler(request: NextRequest, context: Context) {
 
     if (path === "auth/session" && method === "GET")
       return ok({ user: await getUser() });
+    if (
+      path === "settings/registration" &&
+      (method === "GET" || method === "PATCH")
+    ) {
+      const master = await requireUser(true);
+      if (method === "GET") {
+        const settings = await db.appSettings.findUnique({
+          where: { id: "global" },
+        });
+        return ok({
+          autoApproveAccounts: settings?.autoApproveAccounts ?? false,
+        });
+      }
+      const input = z
+        .object({ autoApproveAccounts: z.boolean() })
+        .strict()
+        .parse(await jsonBody(request));
+      const settings = await db.$transaction(async (tx) => {
+        const result = await tx.appSettings.upsert({
+          where: { id: "global" },
+          create: { id: "global", ...input },
+          update: input,
+        });
+        await tx.auditLog.create({
+          data: audit(
+            master.id,
+            input.autoApproveAccounts
+              ? "AUTO_APPROVAL_ENABLED"
+              : "AUTO_APPROVAL_DISABLED",
+            "global",
+          ),
+        });
+        return result;
+      });
+      return ok({ autoApproveAccounts: settings.autoApproveAccounts });
+    }
     if (path === "auth/register" && method === "POST") {
       await rateLimit(`register:${clientKey(request)}`, 15);
       const input = registerSchema.parse(await jsonBody(request));
       const passwordHash = await hashPassword(input.password);
       // A mesma resposta para um e-mail novo ou já cadastrado evita enumeração.
       try {
-        await db.user.create({
-          data: { name: input.name, email: input.email, passwordHash },
+        await db.$transaction(async (tx) => {
+          const settings = await tx.appSettings.findUnique({
+            where: { id: "global" },
+          });
+          await tx.user.create({
+            data: {
+              name: input.name,
+              email: input.email,
+              passwordHash,
+              role: "CREATOR",
+              status: settings?.autoApproveAccounts ? "APPROVED" : "PENDING",
+            },
+          });
         });
       } catch (e) {
         if (!(
@@ -134,7 +181,7 @@ async function handler(request: NextRequest, context: Context) {
       return ok(
         {
           message:
-            "Se o e-mail ainda não estava cadastrado, sua solicitação foi registrada. Aguarde a aprovação do administrador.",
+            "Se o e-mail ainda não estava cadastrado, sua conta foi registrada. Entre para acessar seu espaço ou consultar a aprovação.",
         },
         201,
       );

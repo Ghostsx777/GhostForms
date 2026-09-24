@@ -78,7 +78,7 @@ export function AuthScreen({
             {master
               ? "Entre com sua conta de administrador master."
               : register
-                ? "Crie sua conta. Após a aprovação, seu espaço estará pronto."
+                ? "Crie sua conta para começar. O acesso segue a política de aprovação do site."
                 : "Entre no seu espaço para criar, compartilhar e ouvir."}
           </p>
           <form onSubmit={submit} className="stack">

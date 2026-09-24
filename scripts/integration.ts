@@ -553,6 +553,125 @@ async function run() {
     undefined,
     401,
   );
+  // Esta parte altera uma configuração global: execute somente no banco isolado de CI.
+  if (process.env.INTEGRATION_ISOLATED_DB === "1") {
+    assert.equal(
+      (await call("settings/registration", "GET", undefined, master)).data
+        .autoApproveAccounts,
+      false,
+    );
+    await call("settings/registration", "GET", undefined, undefined, 401);
+    await call(
+      "settings/registration",
+      "PATCH",
+      { autoApproveAccounts: true },
+      undefined,
+      401,
+    );
+    await call("settings/registration", "GET", undefined, creator, 403);
+    await call(
+      "settings/registration",
+      "PATCH",
+      { autoApproveAccounts: true },
+      creator,
+      403,
+    );
+    await call(
+      "settings/registration",
+      "PATCH",
+      { autoApproveAccounts: "true" },
+      master,
+      400,
+    );
+    await call(
+      "settings/registration",
+      "PATCH",
+      { autoApproveAccounts: true },
+      master,
+      403,
+      "https://untrusted.test",
+    );
+    const signup = async (tag: string) => {
+      const input = {
+        name: "Teste de aprovação",
+        email: `${tag}-${suffix}@example.test`,
+        password,
+      };
+      await call("auth/register", "POST", input, undefined, 201);
+      const account = await db.user.findUniqueOrThrow({
+        where: { email: input.email },
+      });
+      ids.push(account.id);
+      return { input, account };
+    };
+    const pending = await signup("pending-policy");
+    assert.equal(pending.account.status, "PENDING");
+    const rejected = await signup("rejected-policy");
+    await call(
+      `users/${rejected.account.id}`,
+      "PATCH",
+      { status: "REJECTED" },
+      master,
+    );
+    await call(
+      "settings/registration",
+      "PATCH",
+      { autoApproveAccounts: true },
+      master,
+    );
+    assert.equal(
+      (await call("settings/registration", "GET", undefined, master)).data
+        .autoApproveAccounts,
+      true,
+    );
+    await call("auth/register", "POST", pending.input, undefined, 201);
+    assert.equal(
+      (await db.user.findUniqueOrThrow({ where: { id: pending.account.id } }))
+        .status,
+      "PENDING",
+    );
+    const approved = await signup("auto-policy");
+    assert.equal(
+      (await db.user.findUniqueOrThrow({ where: { id: rejected.account.id } }))
+        .status,
+      "REJECTED",
+    );
+    assert.equal(approved.account.status, "APPROVED");
+    assert.equal(approved.account.role, "CREATOR");
+    const approvedSession = await call("auth/login", "POST", {
+      email: approved.input.email,
+      password,
+    });
+    await call("forms", "POST", undefined, approvedSession, 201);
+    await call(
+      "settings/registration",
+      "PATCH",
+      { autoApproveAccounts: false },
+      master,
+    );
+    assert.equal(
+      (await call("settings/registration", "GET", undefined, master)).data
+        .autoApproveAccounts,
+      false,
+    );
+    assert.equal(
+      (await db.user.findUniqueOrThrow({ where: { id: approved.account.id } }))
+        .status,
+      "APPROVED",
+    );
+    const after = await signup("after-policy");
+    assert.equal(after.account.status, "PENDING");
+    const events = await db.auditLog.findMany({
+      where: {
+        actorId: masterUser.id,
+        action: { in: ["AUTO_APPROVAL_ENABLED", "AUTO_APPROVAL_DISABLED"] },
+      },
+    });
+    assert.equal(events.length, 2);
+    console.log(
+      "OK: aprovação automática, retorno ao modo manual, persistência, auditoria e isolamento master.",
+    );
+  }
   await call("auth/logout", "POST", undefined, master);
   await call("users", "GET", undefined, master, 401);
   console.log(

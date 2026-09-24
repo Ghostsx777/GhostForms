@@ -4,7 +4,11 @@
 **Admin master:** https://ghostforms-ghostsx777.onrender.com/master-admin
 
 Use seu e-mail e senha habituais. Novas contas continuam dependendo da aprovação
-do master. Para compartilhar um formulário, publique-o no editor e copie o link.
+do master por padrão. Em **Administração → Contas e formulários**, o master pode
+ativar **Aprovar novas contas automaticamente**. Apenas cadastros realizados enquanto
+a opção estiver ativa são aprovados automaticamente; pendentes e reprovados não mudam.
+Desativar a opção não revoga contas já aprovadas. Alterações ficam no registro de atividades.
+Para compartilhar um formulário, publique-o no editor e copie o link.
 No plano gratuito, a primeira visita após inatividade pode demorar cerca de um minuto.
 Use a versão online para manter os dados atualizados; o banco local não é sincronizado.
 

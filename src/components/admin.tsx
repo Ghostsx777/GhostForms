@@ -37,6 +37,35 @@ export function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [autoApprove, setAutoApprove] = useState<boolean | null>(null);
+  const [savingPolicy, setSavingPolicy] = useState(false);
+  const [policyNotice, setPolicyNotice] = useState("");
+  useEffect(() => {
+    api("settings/registration")
+      .then((data) => setAutoApprove(data.autoApproveAccounts))
+      .catch((e) => setError(message(e)));
+  }, []);
+  async function toggleApproval() {
+    if (autoApprove === null || savingPolicy) return;
+    setSavingPolicy(true);
+    setPolicyNotice("");
+    setError("");
+    try {
+      const result = await api("settings/registration", "PATCH", {
+        autoApproveAccounts: !autoApprove,
+      });
+      setAutoApprove(result.autoApproveAccounts);
+      setPolicyNotice(
+        result.autoApproveAccounts
+          ? "Aprovação automática ativada para novos cadastros."
+          : "Novos cadastros agora precisam de aprovação manual.",
+      );
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setSavingPolicy(false);
+    }
+  }
   const [deleting, setDeleting] = useState<Account | null>(null);
   const [confirmation, setConfirmation] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -152,6 +181,45 @@ export function Admin() {
         </button>
       </div>
       <Notice text={error} />
+      {tab === "users" && (
+        <section
+          className="registration-policy"
+          aria-labelledby="registration-policy-title"
+        >
+          <div>
+            <h2 id="registration-policy-title">
+              Aprovar novas contas automaticamente
+            </h2>
+            <p className="muted">
+              Enquanto ativa, novos cadastros já podem criar formulários. Contas
+              pendentes ou reprovadas não são alteradas.
+            </p>
+            <p className="muted" role="status">
+              {policyNotice ||
+                (autoApprove === null
+                  ? "Carregando configuração…"
+                  : autoApprove
+                    ? "Ativada — novos cadastros são aprovados automaticamente."
+                    : "Desativada — aprovação manual pelo master.")}
+            </p>
+          </div>
+          <button
+            type="button"
+            className={`button ${autoApprove ? "primary" : "subtle"}`}
+            role="switch"
+            aria-checked={autoApprove ?? false}
+            aria-labelledby="registration-policy-title"
+            disabled={autoApprove === null || savingPolicy}
+            onClick={toggleApproval}
+          >
+            {savingPolicy
+              ? "Salvando…"
+              : autoApprove
+                ? "Ativada"
+                : "Desativada"}
+          </button>
+        </section>
+      )}
       {loading ? (
         <p role="status">Carregando…</p>
       ) : tab === "users" ? (

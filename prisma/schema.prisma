@@ -125,3 +125,7 @@ model RateLimit {
   expiresAt DateTime
   @@index([expiresAt])
 }
+model AppSettings {
+  id String @id @default("global")
+  autoApproveAccounts Boolean @default(false)
+}

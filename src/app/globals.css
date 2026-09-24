@@ -687,6 +687,28 @@ label:focus-within {
   object-fit: contain;
   mix-blend-mode: screen;
 }
+.registration-policy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.registration-policy > div {
+  flex: 1 1 280px;
+}
+.registration-policy h2 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+.registration-policy p {
+  font-size: 0.875rem;
+  margin: 6px 0;
+}
 .empty-state.compact > svg {
   margin: 0 auto 20px;
   color: var(--purple);
