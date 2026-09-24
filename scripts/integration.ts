@@ -555,6 +555,19 @@ async function run() {
   );
   // Esta parte altera uma configuração global: execute somente no banco isolado de CI.
   if (process.env.INTEGRATION_ISOLATED_DB === "1") {
+    const policyUser = await db.user.create({
+      data: {
+        name: "Criador política",
+        email: `policy-${suffix}@example.test`,
+        passwordHash: await hashPassword(password),
+        status: "APPROVED",
+      },
+    });
+    ids.push(policyUser.id);
+    const policyCreator = await call("auth/login", "POST", {
+      email: policyUser.email,
+      password,
+    });
     assert.equal(
       (await call("settings/registration", "GET", undefined, master)).data
         .autoApproveAccounts,
@@ -568,12 +581,12 @@ async function run() {
       undefined,
       401,
     );
-    await call("settings/registration", "GET", undefined, creator, 403);
+    await call("settings/registration", "GET", undefined, policyCreator, 403);
     await call(
       "settings/registration",
       "PATCH",
       { autoApproveAccounts: true },
-      creator,
+      policyCreator,
       403,
     );
     await call(
