@@ -1,0 +1,16 @@
+name: Test Keep Alive
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test actual workflow script against controlled HTTP responses
+        run: python3 scripts/test-keep-alive.py

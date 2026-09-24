@@ -1,0 +1,50 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: keep-render-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Check backend health
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    env:
+      HEALTH_URL: https://ghostforms-ghostsx777.onrender.com/api/health
+    steps:
+      - name: Send GET request
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          curl_exit=0
+          status_code=$(curl \
+            --silent \
+            --show-error \
+            --request GET \
+            --header 'Cache-Control: no-cache' \
+            --header 'Pragma: no-cache' \
+            --connect-timeout 10 \
+            --max-time 15 \
+            --output /dev/null \
+            --write-out '%{http_code}' \
+            "$HEALTH_URL") || curl_exit=$?
+
+          echo "HTTP status: ${status_code:-000}"
+
+          if [[ "$curl_exit" -ne 0 ]]; then
+            echo "::error::Request failed: curl exit code $curl_exit (HTTP 000 means no HTTP response)."
+            exit "$curl_exit"
+          fi
+
+          if [[ "$status_code" != '200' ]]; then
+            echo "::error::Expected HTTP 200, received $status_code."
+            exit 1
+          fi
