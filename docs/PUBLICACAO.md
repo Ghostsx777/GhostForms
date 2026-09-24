@@ -79,7 +79,16 @@ Essas opções são usadas apenas durante a migração inicial.
 
 O plano gratuito do Render suspende o processo após inatividade; a primeira visita
 pode demorar cerca de um minuto. Render e Neon têm limites de uso gratuitos.
-Não há garantia de disponibilidade permanente. Não configure rotinas para evitar
-a suspensão. O banco não fica no disco temporário do Render.
+Não há garantia de disponibilidade permanente. O banco não fica no disco temporário
+do Render. O workflow `keep-alive.yml` consulta `/api/health` a cada dez minutos
+(minutos 03, 13, 23, 33, 43 e 53), com até quatro tentativas, cinco segundos de
+intervalo e timeout de 15 segundos por requisição. O job é limitado a três minutos.
+Falhas persistentes ficam visíveis no GitHub Actions. O cron pode atrasar e não
+oferece garantia de impedir a suspensão do plano gratuito.
+
+Em **Actions**, use **Keep Render Alive** para um ping manual e **Test Keep Alive**
+para verificar os seis cenários de falha e recuperação. **Test Application PostgreSQL**
+testa a aplicação e a aprovação automática em banco descartável, sem alterar contas
+ou a política de aprovação do site público.
 
 Fontes: https://render.com/docs/free e https://render.com/docs/deploy-nextjs-app.
